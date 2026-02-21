@@ -29,15 +29,15 @@ By self-hosting this dedicated queue worker, you bypass SaaS limits (like QStash
 
 ```mermaid
 graph TD
-    API_SYNC[Next.js /api/sync] -->|POST /enqueue<br>(Bearer Token)| HTTP_IN[Queue Receiver API]
+    API_SYNC["Next.js /api/sync"] -->|"POST /enqueue<br>(Bearer Token)"| HTTP_IN["Queue Receiver API"]
     
     subgraph Nexora Queue Server
-        HTTP_IN -->|bullmq.addBulk| REDIS[(Redis)]
-        REDIS -->|Worker Job| WORKER[Webhook Dispatcher]
-        BOARD[Bull-Board UI] -.->|Monitor & Admin| REDIS
+        HTTP_IN -->|"bullmq.addBulk"| REDIS[("Redis")]
+        REDIS -->|"Worker Job"| WORKER["Webhook Dispatcher"]
+        BOARD["Bull-Board UI"] -.->|"Monitor & Admin"| REDIS
     end
     
-    WORKER -->|POST Fetch<br>(HMAC Signature)| API_PROC[Next.js /api/process-queue]
+    WORKER -->|"POST Fetch<br>(HMAC Signature)"| API_PROC["Next.js /api/process-queue"]
 ```
 
 ## Getting Started
