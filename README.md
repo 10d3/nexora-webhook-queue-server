@@ -12,7 +12,7 @@
 
 ## Overview
 
-The Nexora Webhook Queue Server acts as a lightweight, independent shock absorber for your Next.js application. It gracefully handles massive bursts of offline synchronization payloads, queues them securely via Redis, and dispatches them efficiently to your core business logic logic using robust exponential backoff.
+The Nexora Webhook Queue Server acts as a lightweight, independent shock absorber for your Next.js application. It gracefully handles massive bursts of offline synchronization payloads, queues them securely via Redis, and dispatches them efficiently to your core business logic using robust exponential backoff.
 
 By self-hosting this dedicated queue worker, you bypass SaaS limits (like QStash's free tier) while maintaining enterprise-grade reliability and a beautiful monitoring interface.
 
@@ -109,6 +109,19 @@ bun run dev
 
 Because the background worker does not have access to user browser cookies/sessions, it securely signs the raw JSON payload body using the `WEBHOOK_SECRET` before transmission.
 The receiving application *must* recreate the signature on the exact payload string and compare it against the `nexora-signature` header to verify authenticity. 
+
+## Contributing
+
+We welcome contributions from the community! Whether you are fixing a bug, adding a feature, or improving documentation, your help is appreciated.
+
+To contribute:
+1. **Fork** the repository and clone it locally.
+2. **Create a branch** for your feature or bugfix (`git checkout -b feature/my-new-feature`).
+3. **Commit your changes** with clear, descriptive messages (`git commit -m 'Add some feature'`).
+4. **Push** your branch to your fork (`git push origin feature/my-new-feature`).
+5. **Open a Pull Request** against the `main` branch of this repository.
+
+Please ensure your code passes TypeScript checks (`bun x tsc --noEmit`) and follows the existing codebase style before submitting your PR!
 
 ---
 
