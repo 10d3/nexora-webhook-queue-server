@@ -23,6 +23,7 @@ By self-hosting this dedicated queue worker, you bypass SaaS limits (like QStash
 - **Auto-Retries**: Native error handling with robust exponential backoff using the industry-standard [BullMQ](https://docs.bullmq.io/).
 - **Beautiful Dashboard**: Built-in monitoring UI using `@bull-board` to visualize job health, manually retry jobs, or clean up queues.
 - **Fully Decoupled**: Zero database dependencies (`Prisma`), meaning it runs safely anywhere with a Redis instance.
+- **Docker Ready**: Includes a highly optimized, multi-stage Dockerfile that drops dev dependencies and runs as a non-root User for enhanced security.
 
 ## Architecture
 
@@ -59,6 +60,14 @@ graph TD
    ```
 
 3. Update `.env` with your secure credentials, Redis URL, and Target URL.
+
+### Docker Deployment
+
+Use the provided `docker-compose.yml` to spin up both the Nexora Server and a persistent Redis instance instantly.
+
+```bash
+docker-compose up -d
+```
 
 ### Development
 

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  nexora-queue-server:
+    build: .
+    container_name: nexora-queue-server
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://queue-redis:6379
+      - INTERNAL_ACCESS_TOKEN=${INTERNAL_ACCESS_TOKEN:-super_secret_token}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-my_webhook_secret}
+      - DEFAULT_TARGET_URL=${DEFAULT_TARGET_URL:-http://host.docker.internal:3000/api/process-queue}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-supersecret}
+    depends_on:
+      queue-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  queue-redis:
+    image: redis:7-alpine
+    container_name: nexora-queue-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - queue_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  queue_redis_data:
