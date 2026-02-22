@@ -18,6 +18,11 @@ interface EnqueueBody {
     targetUrl?: string;
 }
 
+// Simple healthcheck endpoint for Docker/Coolify
+router.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // Next.js calls this when the Service Worker comes back online
 router.post('/enqueue', async (req: Request, res: Response): Promise<any> => {
     const { actions, targetUrl } = req.body as EnqueueBody;

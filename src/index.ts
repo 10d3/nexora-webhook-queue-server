@@ -23,6 +23,6 @@ app.use('/admin/queues', dashboardRouter);
 
 // Start Server
 app.listen(env.PORT, () => {
-    console.log(`🚀 Nexora Queue Server running on http://localhost:${env.PORT}`);
-    console.log(`📊 Bull-Board Dashboard available at http://localhost:${env.PORT}/admin/queues`);
+    console.log(`Nexora Queue Server running on http://localhost:${env.PORT}`);
+    console.log(`Bull-Board Dashboard available at http://localhost:${env.PORT}/admin/queues`);
 });
