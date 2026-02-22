@@ -6,12 +6,12 @@ WORKDIR /usr/src/app
 FROM base AS install
 # Install ALL dependencies (including dev) for potential build steps
 RUN mkdir -p /temp/dev
-COPY package.json bun.lockb /temp/dev/
+COPY package.json bun.lock /temp/dev/
 RUN cd /temp/dev && bun install --frozen-lockfile
 
 # Install only production dependencies
 RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
+COPY package.json bun.lock /temp/prod/
 RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 # --------- Release Stage ---------
