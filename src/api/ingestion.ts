@@ -6,10 +6,21 @@ const router = Router();
 
 // Define input types for safety
 interface ActionPayload {
+    // Stable client-generated id — doubles as idempotency key and BullMQ jobId
+    id?: string;
     name: string;
     params: {
         data: any;
         tenantId: string;
+        businessType?: string;
+    };
+    // Identity of the user who performed the action, stamped server-side by
+    // Nexora's /api/sync. Must reach /api/process-queue or permission checks fail.
+    actor?: {
+        id: string;
+        role?: string;
+        tenantId?: string;
+        name?: string;
     };
 }
 
@@ -42,13 +53,21 @@ router.post('/enqueue', async (req: Request, res: Response): Promise<any> => {
         name: 'webhook-dispatch',
         data: {
             actionName: action.name,
-            payload: action.params?.data,
+            // /api/process-queue reads payload.data / payload.categoryId / etc,
+            // so forward the whole params object, not just params.data
+            payload: action.params,
             tenantId: action.params?.tenantId,
+            businessType: action.params?.businessType,
+            actor: action.actor,
+            clientRequestId: action.id,
             targetUrl: targetUrl || env.DEFAULT_TARGET_URL
         },
         opts: {
             attempts: 5,
-            backoff: { type: 'exponential', delay: 2000 }
+            backoff: { type: 'exponential', delay: 2000 },
+            // Same client action re-submitted while its job still exists is a
+            // no-op — first line of dedupe (Nexora's SyncedAction is the second)
+            ...(action.id ? { jobId: action.id } : {})
         }
     }));
 

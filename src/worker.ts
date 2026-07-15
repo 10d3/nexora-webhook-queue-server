@@ -1,14 +1,16 @@
-import { Worker, Job } from 'bullmq';
+import { Worker, Job, UnrecoverableError } from 'bullmq';
 import crypto from 'crypto';
 import { redisConnection } from './config/redis';
 import { env } from './config/env';
 
 // Worker will process jobs automatically if launched, so we export it
 export const dispatchWorker = new Worker('nexora-webhooks', async (job: Job) => {
-    const { actionName, payload, tenantId, targetUrl } = job.data;
+    const { actionName, payload, tenantId, businessType, actor, clientRequestId, targetUrl } = job.data;
 
-    // Clean payload matching Nexora spec
-    const bodyString = JSON.stringify({ actionName, payload, tenantId });
+    // Clean payload matching Nexora spec — actor carries the original user's
+    // identity so /api/process-queue can pass permission checks;
+    // clientRequestId is Nexora's idempotency key
+    const bodyString = JSON.stringify({ actionName, payload, tenantId, businessType, actor, clientRequestId });
 
     // Webhook Security: Generate HMAC SHA256 signature
     const signature = crypto
@@ -30,6 +32,13 @@ export const dispatchWorker = new Worker('nexora-webhooks', async (job: Job) => 
 
     if (!response.ok) {
         const errorText = await response.text();
+
+        // 422 = the action was processed and rejected (permission, validation,
+        // business rule). Retrying can never succeed — fail the job permanently.
+        if (response.status === 422) {
+            throw new UnrecoverableError(`Action rejected (422): ${errorText}`);
+        }
+
         // Throwing error causes BullMQ to trigger retry mechanism
         throw new Error(`Webhook failed with status: ${response.status}. Body: ${errorText}`);
     }
