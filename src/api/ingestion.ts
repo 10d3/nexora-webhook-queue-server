@@ -63,7 +63,10 @@ router.post('/enqueue', async (req: Request, res: Response): Promise<any> => {
             targetUrl: targetUrl || env.DEFAULT_TARGET_URL
         },
         opts: {
-            attempts: 5,
+            // 8 attempts, exponential from 2s ≈ 4min window — enough for a
+            // child action (503 "waiting for parent sync") to outlast its
+            // parent create being processed
+            attempts: 8,
             backoff: { type: 'exponential', delay: 2000 },
             // Same client action re-submitted while its job still exists is a
             // no-op — first line of dedupe (Nexora's SyncedAction is the second)
