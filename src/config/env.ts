@@ -20,4 +20,8 @@ export const env = {
     DEFAULT_TARGET_URL: requireEnv('DEFAULT_TARGET_URL'),
     ADMIN_USER: requireEnv('ADMIN_USER'),
     ADMIN_PASS: requireEnv('ADMIN_PASS'),
+    // Base origin for scheduled-task webhooks, e.g. "https://mynexora.net" —
+    // separate from DEFAULT_TARGET_URL (the full process-queue endpoint);
+    // scheduled tasks combine this with each job's own targetPath.
+    APP_BASE_URL: requireEnv('APP_BASE_URL'),
 };

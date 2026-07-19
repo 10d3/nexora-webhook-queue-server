@@ -55,3 +55,46 @@ export const dispatchWorker = new Worker('nexora-webhooks', async (job: Job) => 
 dispatchWorker.on('failed', (job, err) => {
     console.error(`[Worker] ❌ Failed Job ${job?.id} (Action: ${job?.data?.actionName}): ${err.message}`);
 });
+
+// Cron-triggered scheduled tasks (payment reminders, reports, etc.) — same
+// signed-webhook pattern as dispatchWorker, but the target route needs no
+// payload: it queries everything fresh from the DB when it fires, so the
+// body is just an empty JSON object, HMAC-signed like any other body.
+export const scheduledTaskWorker = new Worker('nexora-scheduled-tasks', async (job: Job) => {
+    const { targetPath } = job.data;
+    const targetUrl = `${env.APP_BASE_URL}${targetPath}`;
+    const bodyString = '{}';
+
+    const signature = crypto
+        .createHmac('sha256', env.WEBHOOK_SECRET)
+        .update(bodyString)
+        .digest('hex');
+
+    console.log(`[Scheduler] Firing scheduled task ${job.name} -> ${targetUrl}`);
+
+    const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'nexora-signature': signature,
+        },
+        body: bodyString
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Scheduled task ${job.name} failed with status ${response.status}: ${errorText}`);
+    }
+
+    const responseText = await response.text();
+    console.log(`[Scheduler] ✨ ${job.name} completed: ${responseText}`);
+    return responseText;
+
+}, {
+    connection: redisConnection as any,
+    concurrency: 1 // Scheduled tasks are infrequent — no need for parallelism
+});
+
+scheduledTaskWorker.on('failed', (job, err) => {
+    console.error(`[Scheduler] ❌ Failed scheduled task ${job?.name} (${job?.id}): ${err.message}`);
+});
