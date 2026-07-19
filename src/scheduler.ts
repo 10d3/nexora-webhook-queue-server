@@ -18,6 +18,18 @@ export interface ScheduledJobDef {
  */
 export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     {
+        name: 'daily-report',
+        targetPath: '/api/cron/reports/daily',
+        cronPattern: '0 6 * * *', // daily at 06:00 UTC — waiting when owners wake up
+        describe: 'daily 06:00 UTC',
+    },
+    {
+        name: 'weekly-report',
+        targetPath: '/api/cron/reports/weekly',
+        cronPattern: '30 6 * * 1', // Monday 06:30 UTC — staggered after the daily job
+        describe: 'weekly, Monday 06:30 UTC',
+    },
+    {
         name: 'payment-reminders',
         targetPath: '/api/cron/payment-reminders',
         cronPattern: '0 8 * * *', // daily at 08:00 UTC
