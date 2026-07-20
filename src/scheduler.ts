@@ -20,14 +20,17 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
     {
         name: 'daily-report',
         targetPath: '/api/cron/reports/daily',
-        cronPattern: '0 6 * * *', // daily at 06:00 UTC — waiting when owners wake up
-        describe: 'daily 06:00 UTC',
+        // 10:00 UTC ≈ 05:00 Haiti time — well after any overnight session
+        // (open past midnight) has closed, so "yesterday" is fully settled
+        // before the report generates.
+        cronPattern: '0 10 * * *',
+        describe: 'daily 10:00 UTC',
     },
     {
         name: 'weekly-report',
         targetPath: '/api/cron/reports/weekly',
-        cronPattern: '30 6 * * 1', // Monday 06:30 UTC — staggered after the daily job
-        describe: 'weekly, Monday 06:30 UTC',
+        cronPattern: '30 10 * * 1', // Monday 10:30 UTC — staggered after the daily job
+        describe: 'weekly, Monday 10:30 UTC',
     },
     {
         name: 'payment-reminders',
@@ -38,16 +41,26 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
 ];
 
 /**
- * Registers repeatable (cron-pattern) jobs. BullMQ dedupes repeat
- * registration by job name + repeat options, so calling this on every server
- * boot is safe — it will not create duplicate schedules.
- *
- * Each job's data carries its OWN targetPath (mirrors how nexora-webhooks
- * jobs carry their own targetUrl) — the worker builds the full URL from
- * env.APP_BASE_URL + targetPath, so adding a new scheduled task later is
- * just one more entry in SCHEDULED_JOBS above, no worker changes needed.
+ * Registers repeatable (cron-pattern) jobs — idempotent AND self-correcting:
+ * BullMQ keys a repeatable registration off name + repeat options together,
+ * so merely calling .add() again with a CHANGED cronPattern does NOT replace
+ * the old schedule — it leaves it running alongside the new one forever.
+ * To change a schedule safely, any existing repeatable for a known job name
+ * is removed first, then re-added fresh from the current SCHEDULED_JOBS
+ * definition. Safe to call on every boot either way (removing + re-adding an
+ * unchanged schedule is a harmless no-op).
  */
 export async function registerScheduledJobs() {
+    const existing = await scheduledTasksQueue.getRepeatableJobs();
+    const knownNames = new Set(SCHEDULED_JOBS.map((j) => j.name));
+
+    for (const repeatable of existing) {
+        if (knownNames.has(repeatable.name)) {
+            await scheduledTasksQueue.removeRepeatableByKey(repeatable.key);
+            console.log(`[Scheduler] Removed stale repeatable: ${repeatable.name} (was "${repeatable.pattern}")`);
+        }
+    }
+
     for (const job of SCHEDULED_JOBS) {
         await scheduledTasksQueue.add(
             job.name,
