@@ -38,6 +38,17 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
         cronPattern: '0 8 * * *', // daily at 08:00 UTC
         describe: 'daily 08:00 UTC',
     },
+    {
+        name: 'closing-report',
+        targetPath: '/api/cron/reports/closing',
+        // Per-tenant closing times vary (businessHours + timezone are set
+        // per tenant), unlike the other jobs above which fire once globally
+        // — this one needs a frequent cadence so the target route's own
+        // tolerance window (30 min, see runClosingReportSweep) reliably
+        // catches each tenant's actual local closing time.
+        cronPattern: '*/15 * * * *', // every 15 minutes
+        describe: 'every 15 minutes',
+    },
 ];
 
 /**
