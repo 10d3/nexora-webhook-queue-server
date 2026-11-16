@@ -33,6 +33,14 @@ export const SCHEDULED_JOBS: ScheduledJobDef[] = [
         describe: 'weekly, Monday 10:30 UTC',
     },
     {
+        name: 'credit-billing',
+        targetPath: '/api/cron/credit-billing',
+        // 06:00 UTC — runs the credit/overdue sweep before the 08:00 payment
+        // reminders, so that day's reminders see freshly generated statements.
+        cronPattern: '0 6 * * *',
+        describe: 'daily 06:00 UTC',
+    },
+    {
         name: 'payment-reminders',
         targetPath: '/api/cron/payment-reminders',
         cronPattern: '0 8 * * *', // daily at 08:00 UTC
